@@ -36,13 +36,15 @@ def extract_features(image, _feature_extractor, _vit_model):
         outputs = _vit_model(**inputs)
     
     if isinstance(outputs, tuple):
-        last_hidden_state = outputs[0].last_hidden_state
+        features = outputs[0]
+    elif isinstance(outputs, torch.Tensor):
+        features = outputs
     elif hasattr(outputs, 'last_hidden_state'):
-        last_hidden_state = outputs.last_hidden_state
+        features = outputs.last_hidden_state
     else:
-        raise ValueError("Unexpected output format from _vit_model")
+        raise ValueError(f"Unexpected output format from _vit_model: {type(outputs)}")
     
-    return last_hidden_state.mean(dim=1).cpu().numpy()
+    return features.mean(dim=1).cpu().numpy()
 
 def generate_mashup(emoji1_features, emoji2_features, sd_model):
     combined_features = (emoji1_features + emoji2_features) / 2
