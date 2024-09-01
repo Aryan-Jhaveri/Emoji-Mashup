@@ -1,0 +1,16 @@
+import React from 'react';
+
+interface EmojiDisplayProps {
+  emoji: string;
+}
+
+const EmojiDisplay: React.FC<EmojiDisplayProps> = ({ emoji }) => {
+  return (
+    <div className="emoji-display">
+      <h2>Combined Emoji</h2>
+      <img src={emoji} alt="Combined Emoji" />
+    </div>
+  );
+};
+
+export default EmojiDisplay;

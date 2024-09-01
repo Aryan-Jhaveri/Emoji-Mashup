@@ -1,32 +1,42 @@
 import React, { useState } from 'react';
 import EmojiSelector from './components/EmojiSelector';
-import MashupDisplay from './components/MashupDisplay';
-import { generateMashup } from './utils/mashupUtils';
+import EmojiCombiner from './components/EmojiCombiner';
+import EmojiDisplay from './components/EmojiDisplay';
+import { combineEmojis } from './utils/emojiUtils';
 import './App.css';
 
 const App: React.FC = () => {
-  const [emoji1, setEmoji1] = useState<string | null>(null);
-  const [emoji2, setEmoji2] = useState<string | null>(null);
-  const [mashupResult, setMashupResult] = useState<string | null>(null);
+  const [selectedEmojis, setSelectedEmojis] = useState<string[]>([]);
+  const [combinedEmoji, setCombinedEmoji] = useState<string | null>(null);
 
-  const handleGenerate = () => {
-    if (emoji1 && emoji2) {
-      const result = generateMashup(emoji1, emoji2);
-      setMashupResult(result);
+  const handleEmojiSelect = (emoji: string) => {
+    if (selectedEmojis.length < 2) {
+      setSelectedEmojis([...selectedEmojis, emoji]);
     }
+  };
+
+  const handleCombine = () => {
+    if (selectedEmojis.length === 2) {
+      const result = combineEmojis(selectedEmojis[0], selectedEmojis[1]);
+      setCombinedEmoji(result);
+    }
+  };
+
+  const handleReset = () => {
+    setSelectedEmojis([]);
+    setCombinedEmoji(null);
   };
 
   return (
     <div className="App">
-      <h1>Emoji Mashup Generator</h1>
-      <div className="emoji-selectors">
-        <EmojiSelector onSelect={setEmoji1} selectedEmoji={emoji1} />
-        <EmojiSelector onSelect={setEmoji2} selectedEmoji={emoji2} />
-      </div>
-      <button onClick={handleGenerate} disabled={!emoji1 || !emoji2}>
-        Generate Mashup
-      </button>
-      {mashupResult && <MashupDisplay mashup={mashupResult} />}
+      <h1>🧑‍🍳 Emoji Kitchen</h1>
+      <EmojiSelector onSelect={handleEmojiSelect} />
+      <EmojiCombiner 
+        selectedEmojis={selectedEmojis} 
+        onCombine={handleCombine}
+        onReset={handleReset}
+      />
+      {combinedEmoji && <EmojiDisplay emoji={combinedEmoji} />}
     </div>
   );
 };

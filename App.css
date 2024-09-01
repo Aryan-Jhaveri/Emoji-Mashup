@@ -1,0 +1,85 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+}
+
+.emoji-selector input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 10px;
+}
+
+.emoji-grid button {
+  font-size: 24px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.emoji-grid button:hover {
+  background-color: #f0f0f0;
+}
+
+.emoji-combiner {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.selected-emojis {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.selected-emoji {
+  margin: 0 10px;
+}
+
+.emoji-combiner button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 0 5px;
+}
+
+.emoji-combiner button:disabled {
+  background-color: #ddd;
+  cursor: not-allowed;
+}
+
+.emoji-display {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.emoji-display img {
+  max-width: 200px;
+  max-height: 200px;
+}
