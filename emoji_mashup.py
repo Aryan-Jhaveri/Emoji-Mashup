@@ -5,17 +5,14 @@ import requests
 from transformers import ViTFeatureExtractor, ViTModel
 from diffusers import StableDiffusionPipeline
 import torch
+from transformers import AutoFeatureExtractor, AutoModel
 
 @st.cache_resource
 def load_models():
-    feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224")
-    vit_model = ViTModel.from_pretrained("google/vit-base-patch16-224")
-    # Use CPU if CUDA is not available
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    sd_model = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", torch_dtype=torch.float32).to(device)
+    feature_extractor = AutoFeatureExtractor.from_pretrained("google/vit-base-patch16-224")
+    vit_model = AutoModel.from_pretrained("google/vit-base-patch16-224", device_map="auto")
+    sd_model = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", torch_dtype=torch.float32, device_map="auto")
     return feature_extractor, vit_model, sd_model
-
-feature_extractor, vit_model, sd_model = load_models()
 
 def load_emoji(emoji_code):
     url = f"https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/128/emoji_u{emoji_code}.png"
