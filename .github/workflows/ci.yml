@@ -1,0 +1,33 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        chmod +x ./setup.sh
+        ./setup.sh
+    
+    - name: Run tests
+      run: |
+        # Add your test commands here
+        python -c "import PIL; print(PIL.__version__)"
+        python -c "import torch; print(torch.__version__)"
+        python -c "import transformers; print(transformers.__version__)"
+    
+    - name: Run Streamlit app
+      run: |
+        streamlit run emoji_mashup.py &
+        sleep 5
+        curl -f http://localhost:8501
