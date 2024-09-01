@@ -82,7 +82,7 @@ if st.button("Generate Mashup"):
                 features2 = extract_features(img2, feature_extractor, vit_model)
             except ValueError as ve:
                 st.error(f"Error during feature extraction: {str(ve)}")
-            return
+                    return
 
             del vit_model
             gc.collect()
