@@ -5,23 +5,29 @@ import requests
 from transformers import ViTFeatureExtractor, ViTModel
 from diffusers import StableDiffusionPipeline
 import torch
-from transformers import AutoFeatureExtractor, AutoModel
+import numpy as np
 
 @st.cache_resource
 def load_models():
-    feature_extractor = AutoFeatureExtractor.from_pretrained("google/vit-base-patch16-224")
-    vit_model = AutoModel.from_pretrained("google/vit-base-patch16-224", device_map="auto")
-    sd_model = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", torch_dtype=torch.float32, device_map="auto")
+    feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224")
+    vit_model = ViTModel.from_pretrained("google/vit-base-patch16-224")
+    sd_model = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", torch_dtype=torch.float32)
     return feature_extractor, vit_model, sd_model
+
+feature_extractor, vit_model, sd_model = load_models()
 
 def load_emoji(emoji_code):
     url = f"https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/128/emoji_u{emoji_code}.png"
     response = requests.get(url)
-    img = Image.open(io.BytesIO(response.content))
+    img = Image.open(io.BytesIO(response.content)).convert('RGB')
     return img
 
 def extract_features(image):
-    inputs = feature_extractor(images=image, return_tensors="pt")
+    # Ensure image is in RGB format
+    image = image.convert('RGB')
+    # Convert image to numpy array
+    image_np = np.array(image)
+    inputs = feature_extractor(images=image_np, return_tensors="pt")
     outputs = vit_model(**inputs)
     return outputs.last_hidden_state.mean(dim=1)
 
@@ -38,14 +44,17 @@ emoji2 = st.selectbox("Select second emoji", ["1f355", "1f308", "1f680"])
 
 if st.button("Generate Mashup"):
     with st.spinner("Generating mashup..."):
-        img1 = load_emoji(emoji1)
-        img2 = load_emoji(emoji2)
-        features1 = extract_features(img1)
-        features2 = extract_features(img2)
-        mashup = generate_mashup(features1, features2)
-        
-        st.image(img1, caption="Emoji 1", width=100)
-        st.image(img2, caption="Emoji 2", width=100)
-        st.image(mashup, caption="Mashup Result", width=200)
+        try:
+            img1 = load_emoji(emoji1)
+            img2 = load_emoji(emoji2)
+            features1 = extract_features(img1)
+            features2 = extract_features(img2)
+            mashup = generate_mashup(features1, features2)
+            
+            st.image(img1, caption="Emoji 1", width=100)
+            st.image(img2, caption="Emoji 2", width=100)
+            st.image(mashup, caption="Mashup Result", width=200)
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
 
 st.text("Note: This is a prototype and results may vary.")
