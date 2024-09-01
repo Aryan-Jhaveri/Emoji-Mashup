@@ -28,12 +28,12 @@ def load_emoji(emoji_code):
     return img
 
 @st.cache_data
-def extract_features(image, feature_extractor, vit_model):
+def extract_features(image, _feature_extractor, _vit_model):
     image = image.convert('RGB')
     image_np = np.array(image)
-    inputs = feature_extractor(images=image_np, return_tensors="pt")
+    inputs = _feature_extractor(images=image_np, return_tensors="pt")
     with torch.no_grad():
-        outputs = vit_model(**inputs)
+        outputs = _vit_model(**inputs)
     return outputs.last_hidden_state.mean(dim=1)
 
 def generate_mashup(emoji1_features, emoji2_features, sd_model):
@@ -47,6 +47,12 @@ st.title("Emoji Mashup Generator")
 
 emoji1 = st.selectbox("Select first emoji", ["1f600", "1f60e", "1f914"])
 emoji2 = st.selectbox("Select second emoji", ["1f355", "1f308", "1f680"])
+
+col1, col2 = st.columns(2)
+with col1:
+    st.image(load_emoji(emoji1), caption="Emoji 1", width=100)
+with col2:
+    st.image(load_emoji(emoji2), caption="Emoji 2", width=100)
 
 if st.button("Generate Mashup"):
     with st.spinner("Generating mashup..."):
@@ -71,8 +77,6 @@ if st.button("Generate Mashup"):
             gc.collect()
             torch.cuda.empty_cache()
 
-            st.image(img1, caption="Emoji 1", width=100)
-            st.image(img2, caption="Emoji 2", width=100)
             st.image(mashup, caption="Mashup Result", width=200)
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
