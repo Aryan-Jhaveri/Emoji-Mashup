@@ -7,10 +7,6 @@ from diffusers import StableDiffusionPipeline
 import torch
 import numpy as np
 import gc
-import signal
-
-def timeout_handler(signum, frame):
-    raise TimeoutError("Operation timed out")
 
 @st.cache_resource
 def load_feature_extractor():
@@ -51,9 +47,6 @@ emoji2 = st.selectbox("Select second emoji", ["1f355", "1f308", "1f680"])
 if st.button("Generate Mashup"):
     with st.spinner("Generating mashup..."):
         try:
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(60)  # Set 60-second timeout
-
             img1 = load_emoji(emoji1)
             img2 = load_emoji(emoji2)
 
@@ -73,18 +66,10 @@ if st.button("Generate Mashup"):
             gc.collect()
             torch.cuda.empty_cache()
 
-            signal.alarm(0)  # Disable the alarm
-
             st.image(img1, caption="Emoji 1", width=100)
             st.image(img2, caption="Emoji 2", width=100)
             st.image(mashup, caption="Mashup Result", width=200)
-        except TimeoutError:
-            st.error("Operation timed out. Please try again.")
-        except BrokenPipeError:
-            st.error("A communication error occurred. Please try again.")
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
-        finally:
-            signal.alarm(0)  # Ensure the alarm is disabled
 
 st.text("Note: This is a prototype and results may vary.")
