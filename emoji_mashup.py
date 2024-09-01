@@ -10,7 +10,9 @@ import torch
 def load_models():
     feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224")
     vit_model = ViTModel.from_pretrained("google/vit-base-patch16-224")
-    sd_model = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", torch_dtype=torch.float16)
+    # Use CPU if CUDA is not available
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    sd_model = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", torch_dtype=torch.float32).to(device)
     return feature_extractor, vit_model, sd_model
 
 feature_extractor, vit_model, sd_model = load_models()
