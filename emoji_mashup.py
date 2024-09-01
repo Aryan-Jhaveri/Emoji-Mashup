@@ -77,8 +77,12 @@ if st.button("Generate Mashup"):
             vit_model = load_vit_model()
             
             progress_bar.progress(50)
-            features1 = extract_features(img1, feature_extractor, vit_model)
-            features2 = extract_features(img2, feature_extractor, vit_model)
+            try:
+                features1 = extract_features(img1, feature_extractor, vit_model)
+                features2 = extract_features(img2, feature_extractor, vit_model)
+            except ValueError as ve:
+                st.error(f"Error during feature extraction: {str(ve)}")
+                return
 
             del vit_model
             gc.collect()
@@ -94,8 +98,6 @@ if st.button("Generate Mashup"):
 
             progress_bar.progress(100)
             st.image(mashup, caption="Mashup Result", width=200)
-        except ValueError as ve:
-            st.error(f"An error occurred during feature extraction: {str(ve)}")
         except Exception as e:
             st.error(f"An unexpected error occurred: {str(e)}")
         finally:
