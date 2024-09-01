@@ -6,15 +6,23 @@ from transformers import ViTFeatureExtractor, ViTModel
 from diffusers import StableDiffusionPipeline
 import torch
 import numpy as np
+import gc
+import signal
+
+def timeout_handler(signum, frame):
+    raise TimeoutError("Operation timed out")
 
 @st.cache_resource
-def load_models():
-    feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224")
-    vit_model = ViTModel.from_pretrained("google/vit-base-patch16-224")
-    sd_model = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", torch_dtype=torch.float32)
-    return feature_extractor, vit_model, sd_model
+def load_feature_extractor():
+    return ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224")
 
-feature_extractor, vit_model, sd_model = load_models()
+@st.cache_resource
+def load_vit_model():
+    return ViTModel.from_pretrained("google/vit-base-patch16-224")
+
+@st.cache_resource
+def load_sd_model():
+    return StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", torch_dtype=torch.float32)
 
 def load_emoji(emoji_code):
     url = f"https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/128/emoji_u{emoji_code}.png"
@@ -22,16 +30,14 @@ def load_emoji(emoji_code):
     img = Image.open(io.BytesIO(response.content)).convert('RGB')
     return img
 
-def extract_features(image):
-    # Ensure image is in RGB format
+def extract_features(image, feature_extractor, vit_model):
     image = image.convert('RGB')
-    # Convert image to numpy array
     image_np = np.array(image)
     inputs = feature_extractor(images=image_np, return_tensors="pt")
     outputs = vit_model(**inputs)
     return outputs.last_hidden_state.mean(dim=1)
 
-def generate_mashup(emoji1_features, emoji2_features):
+def generate_mashup(emoji1_features, emoji2_features, sd_model):
     combined_features = (emoji1_features + emoji2_features) / 2
     prompt = "An emoji that combines aspects of both input emojis"
     image = sd_model(prompt=prompt, latents=combined_features).images[0]
@@ -45,16 +51,40 @@ emoji2 = st.selectbox("Select second emoji", ["1f355", "1f308", "1f680"])
 if st.button("Generate Mashup"):
     with st.spinner("Generating mashup..."):
         try:
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(60)  # Set 60-second timeout
+
             img1 = load_emoji(emoji1)
             img2 = load_emoji(emoji2)
-            features1 = extract_features(img1)
-            features2 = extract_features(img2)
-            mashup = generate_mashup(features1, features2)
-            
+
+            feature_extractor = load_feature_extractor()
+            vit_model = load_vit_model()
+            features1 = extract_features(img1, feature_extractor, vit_model)
+            features2 = extract_features(img2, feature_extractor, vit_model)
+
+            del vit_model
+            gc.collect()
+            torch.cuda.empty_cache()
+
+            sd_model = load_sd_model()
+            mashup = generate_mashup(features1, features2, sd_model)
+
+            del sd_model
+            gc.collect()
+            torch.cuda.empty_cache()
+
+            signal.alarm(0)  # Disable the alarm
+
             st.image(img1, caption="Emoji 1", width=100)
             st.image(img2, caption="Emoji 2", width=100)
             st.image(mashup, caption="Mashup Result", width=200)
+        except TimeoutError:
+            st.error("Operation timed out. Please try again.")
+        except BrokenPipeError:
+            st.error("A communication error occurred. Please try again.")
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
+        finally:
+            signal.alarm(0)  # Ensure the alarm is disabled
 
 st.text("Note: This is a prototype and results may vary.")
