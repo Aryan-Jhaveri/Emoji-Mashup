@@ -14,29 +14,33 @@ def load_feature_extractor():
 
 @st.cache_resource
 def load_vit_model():
-    return ViTModel.from_pretrained("google/vit-base-patch16-224")
+    return ViTModel.from_pretrained("google/vit-base-patch16-224", torchscript=True)
 
 @st.cache_resource
 def load_sd_model():
-    return StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", torch_dtype=torch.float32)
+    return StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", torch_dtype=torch.float16, revision="fp16")
 
+@st.cache_data
 def load_emoji(emoji_code):
     url = f"https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/128/emoji_u{emoji_code}.png"
     response = requests.get(url)
     img = Image.open(io.BytesIO(response.content)).convert('RGB')
     return img
 
+@st.cache_data
 def extract_features(image, feature_extractor, vit_model):
     image = image.convert('RGB')
     image_np = np.array(image)
     inputs = feature_extractor(images=image_np, return_tensors="pt")
-    outputs = vit_model(**inputs)
+    with torch.no_grad():
+        outputs = vit_model(**inputs)
     return outputs.last_hidden_state.mean(dim=1)
 
 def generate_mashup(emoji1_features, emoji2_features, sd_model):
     combined_features = (emoji1_features + emoji2_features) / 2
     prompt = "An emoji that combines aspects of both input emojis"
-    image = sd_model(prompt=prompt, latents=combined_features).images[0]
+    with torch.no_grad():
+        image = sd_model(prompt=prompt, latents=combined_features, num_inference_steps=30).images[0]
     return image
 
 st.title("Emoji Mashup Generator")
@@ -52,6 +56,7 @@ if st.button("Generate Mashup"):
 
             feature_extractor = load_feature_extractor()
             vit_model = load_vit_model()
+            
             features1 = extract_features(img1, feature_extractor, vit_model)
             features2 = extract_features(img2, feature_extractor, vit_model)
 
