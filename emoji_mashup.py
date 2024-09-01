@@ -66,6 +66,7 @@ with col2:
 
 if st.button("Generate Mashup"):
     progress_bar = st.progress(0)
+    error_occurred = False
     with st.spinner("Generating mashup..."):
         try:
             progress_bar.progress(10)
@@ -82,22 +83,23 @@ if st.button("Generate Mashup"):
                 features2 = extract_features(img2, feature_extractor, vit_model)
             except ValueError as ve:
                 st.error(f"Error during feature extraction: {str(ve)}")
-                return
+                error_occurred = True
 
-            del vit_model
-            gc.collect()
-            torch.cuda.empty_cache()
+            if not error_occurred:
+                del vit_model
+                gc.collect()
+                torch.cuda.empty_cache()
 
-            progress_bar.progress(70)
-            sd_model = load_sd_model()
-            mashup = generate_mashup(features1, features2, sd_model)
+                progress_bar.progress(70)
+                sd_model = load_sd_model()
+                mashup = generate_mashup(features1, features2, sd_model)
 
-            del sd_model
-            gc.collect()
-            torch.cuda.empty_cache()
+                del sd_model
+                gc.collect()
+                torch.cuda.empty_cache()
 
-            progress_bar.progress(100)
-            st.image(mashup, caption="Mashup Result", width=200)
+                progress_bar.progress(100)
+                st.image(mashup, caption="Mashup Result", width=200)
         except Exception as e:
             st.error(f"An unexpected error occurred: {str(e)}")
         finally:
